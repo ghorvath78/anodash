@@ -10,7 +10,7 @@ export default class RadarPlot extends React.Component {
         super(props);
 
         this.cfg = {
-            r: 200,
+            r: 300,
             maxFactor: 0.6,
             minFactor: 0.15
         };        
@@ -31,8 +31,8 @@ export default class RadarPlot extends React.Component {
 
         this.svgCanvas = d3.select(this.canvas.current)
             .append("svg")
-            .attr("width", 400)
-            .attr("height", 400)
+            .attr("width", 500)
+            .attr("height", 500)
             .style("border", "1px solid black")
             .attr("viewBox", (-this.cfg.r)+" "+(-this.cfg.r)+" "+(2*this.cfg.r)+" "+(2*this.cfg.r))
 
@@ -95,7 +95,7 @@ export default class RadarPlot extends React.Component {
         const line = d3.lineRadial()
             .curve(d3.curveLinearClosed)
 	        .angle( (d,i) => i*2*Math.PI/N + Math.PI/2)
-            .radius( d => startRad + (endRad-startRad)/(this.props.limits[d[0]][1]-this.props.limits[d[0]][0])*(d[1] - this.props.limits[d[0]][0]));
+            .radius( d => startRad + (this.props.upperLimit[d[0]] !== this.props.lowerLimit[d[0]] ? (endRad-startRad)/(this.props.upperLimit[d[0]]-this.props.lowerLimit[d[0]])*(d[1] - this.props.lowerLimit[d[0]]) : 0) );
         this.rawPlot.transition().duration(100).attr("d", line(Object.entries(this.props.point)));
     }
 
