@@ -44,16 +44,16 @@ export default class AnoDashApp extends React.Component {
         return <>
             <HeaderBar onStartStream={() => this.handleStartStream()} />
             <div className="AnoDashApp">
-                <div className="radar-container">
-                    <RadarPlot 
-                        point={this.state.point}
-                        lowerLimit={this.state.lower}
-                        upperLimit={this.state.upper}
-                        ticks={[0.00, 0.25, 0.50, 0.75, 1.00]}
-                    />
+                <div className="anodash-upperline">
+                    <div className="anodash-radar-container">
+                        <RadarPlot 
+                            point={this.state.point}
+                            lowerLimit={this.state.lower}
+                            upperLimit={this.state.upper}
+                            ticks={[0.00, 0.25, 0.50, 0.75, 1.00]}
+                        />
+                    </div>
                 </div>
-                <button type="button" onClick={() => {this.setState(state => ({phase: Math.max(0, state.phase-1)})); }} > Prev </button>
-                <button type="button" onClick={() => {this.setState(state => ({phase: Math.min(this.values.length-1, state.phase+1)})); }} > Next </button>
             </div>
             </>;
     }
@@ -62,3 +62,5 @@ export default class AnoDashApp extends React.Component {
 //point={this.values[this.state.phase]}
 //lowerLimit={{"alma": 0.0, "körte": 0.0, "barack": 0.0, "meggy": -1.0, "szilva": 0.0, "narancs": 0.0}}
 //upperLimit={{"alma": 4.0, "körte": 4.0, "barack": 8.0, "meggy": 3.0, "szilva": 3.0, "narancs": 15.0}}
+//<button type="button" onClick={() => {this.setState(state => ({phase: Math.max(0, state.phase-1)})); }} > Prev </button>
+//<button type="button" onClick={() => {this.setState(state => ({phase: Math.min(this.values.length-1, state.phase+1)})); }} > Next </button>

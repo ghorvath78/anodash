@@ -31,11 +31,10 @@ export default class RadarPlot extends React.Component {
 
         this.svgCanvas = d3.select(this.canvas.current)
             .append("svg")
-            .attr("width", 500)
-            .attr("height", 500)
-            .style("border", "1px solid black")
+            .attr("width", "100%")
             .attr("viewBox", (-this.cfg.r)+" "+(-this.cfg.r)+" "+(2*this.cfg.r)+" "+(2*this.cfg.r))
 
+//        this.svgCanvas.append("rect").attr("x", -this.cfg.r).attr("y", -this.cfg.r).attr("width", 2*this.cfg.r).attr("height", 2*this.cfg.r).attr("fill", "none").attr("stroke","black").attr("stroke-width", 2);
         this.rawPlot = this.svgCanvas.append("g").append("path").attr("class", "rawplot");
         this.axis = this.svgCanvas.append("g").attr("class", "axis");
         this.ticks = this.svgCanvas.append("g").attr("class", "ticks");
@@ -84,9 +83,11 @@ export default class RadarPlot extends React.Component {
             .curve(d3.curveLinearClosed)
             .angle( (d,i) => i*2*Math.PI/N + Math.PI/2)
             .radius( d => startRad + (endRad-startRad)/(maxTick-minTick)*(d-minTick));
-        this.ticks.selectAll("path")
-    	    .data(this.props.ticks)
-    	    .enter()
+        const axisSelection = this.ticks.selectAll("path")
+            .data(this.props.ticks)
+            .attr("d", d => axisLine(new Array(N).fill(d)))
+            .attr("class", "line");
+    	axisSelection.enter()
     	    .append("path")
             .attr("d", d => axisLine(new Array(N).fill(d)))
             .attr("class", "line");
