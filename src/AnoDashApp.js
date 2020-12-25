@@ -44,7 +44,7 @@ export default class AnoDashApp extends React.Component {
         return <>
             <HeaderBar onStartStream={() => this.handleStartStream()} />
             <div className="AnoDashApp">
-                <div className="anodash-upperline">
+                <div className="anodash-line">
                     <div className="anodash-radar-container">
                         <RadarPlot 
                             point={this.state.point}
@@ -52,6 +52,14 @@ export default class AnoDashApp extends React.Component {
                             upperLimit={this.state.upper}
                             ticks={[0.00, 0.25, 0.50, 0.75, 1.00]}
                         />
+                    </div>
+                    <div className="anodash-graph-container">
+                    </div>
+                </div>
+                <div className="anodash-line">
+                    <div className="anodash-timeplot-container">
+                    </div>
+                    <div className="anodash-relplot-container">
                     </div>
                 </div>
             </div>

@@ -1,12 +1,37 @@
 .AnoDashApp {
 }
 
-.anodash-upperline {
+.anodash-line {
   display: flex;
+  height: calc(100vh /2 - 5em / 2);
 }
 
 .anodash-radar-container {
-  width: 40vh;
-  height: 40vh;
-  box-shadow: 0 10px 16px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19) !important;
+  flex-grow: 0;
+  flex-shrink: 0;
+  margin: 1em 1em 0em 1em;
+  width: calc(100vh /2 - 5em / 2 - 1em);
+  box-shadow: 0 8px 12px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19) !important;
+}
+
+.anodash-graph-container {
+  flex-grow: 1;
+  flex-shrink: 1;
+  margin: 1em 1em 0em 0em;
+  box-shadow: 0 8px 12px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19) !important;
+}
+
+.anodash-timeplot-container {
+  flex-grow: 1;
+  flex-shrink: 1;
+  margin: 1em 1em 1em 1em;
+  box-shadow: 0 8px 12px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19) !important;
+}
+
+.anodash-relplot-container {
+  flex-grow: 0;
+  flex-shrink: 0;
+  margin: 1em 1em 1em 0em;
+  width: calc(100vh /2 - 5em / 2 - 1em);
+  box-shadow: 0 8px 12px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19) !important;
 }
