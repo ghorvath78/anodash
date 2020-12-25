@@ -3,6 +3,7 @@ import './AnoDashApp.css';
 import RadarPlot from './RadarPlot';
 import HeaderBar from './HeaderBar';
 import { NonIdealState } from '@blueprintjs/core';
+import MultiTimeSeriesPlot from './MultiTimeSeriesPlot';
 
 export default class AnoDashApp extends React.Component {
 
@@ -63,6 +64,10 @@ export default class AnoDashApp extends React.Component {
                 </div>
                 <div className="anodash-line">
                     <div className="anodash-timeplot-container">
+                        {this.state.current && <MultiTimeSeriesPlot 
+                            lastMsg={this.state.current}
+                            buffer={this.data}
+                        />}
                         {!this.state.current && <NonIdealState title="No data received yet"  description="Connect to the server and start streaming to watch the time series plot" icon="timeline-area-chart"/>}
                     </div>
                     <div className="anodash-relplot-container">

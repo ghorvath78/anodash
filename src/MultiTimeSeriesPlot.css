@@ -1,0 +1,15 @@
+.multitsplot-main {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.multitsplot-container{
+    width: 100%;
+}
+
+.multitsplot-container rect {
+    fill: none;
+    stroke: red;
+    stroke-width: 1px;
+}

@@ -17,13 +17,11 @@ export default class RadarPlot extends React.Component {
     }
 
     componentDidMount() {
-        console.log("mount", this.props);
         this.initRadar();
         this.drawRadar();
     }
 
     componentDidUpdate() {
-        console.log("update", this.props);
         this.drawRadar();
     }
 
@@ -31,7 +29,7 @@ export default class RadarPlot extends React.Component {
 
         this.svgCanvas = d3.select(this.canvas.current)
             .append("svg")
-            .attr("width", "100%")
+            .style("width", "100%")
             .attr("viewBox", (-this.cfg.r)+" "+(-this.cfg.r)+" "+(2*this.cfg.r)+" "+(2*this.cfg.r))
 
 //        this.svgCanvas.append("rect").attr("x", -this.cfg.r).attr("y", -this.cfg.r).attr("width", 2*this.cfg.r).attr("height", 2*this.cfg.r).attr("fill", "none").attr("stroke","black").attr("stroke-width", 2);
