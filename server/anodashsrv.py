@@ -44,6 +44,7 @@ class DataSet:
         packet["quantile50"] =  self.dataFrame.iloc[self.startPos:self.endPos,:].quantile(0.50).to_dict()
         packet["quantile75"] =  self.dataFrame.iloc[self.startPos:self.endPos,:].quantile(0.75).to_dict()
         packet["quantile90"] =  self.dataFrame.iloc[self.startPos:self.endPos,:].quantile(0.90).to_dict()
+        packet["window"] =  self.W
 
         return packet
 

@@ -2,6 +2,7 @@ import React from 'react';
 import './AnoDashApp.css';
 import RadarPlot from './RadarPlot';
 import HeaderBar from './HeaderBar';
+import { NonIdealState } from '@blueprintjs/core';
 
 export default class AnoDashApp extends React.Component {
 
@@ -15,14 +16,20 @@ export default class AnoDashApp extends React.Component {
             {"alma": 2.0, "körte": 1.2, "barack": 5.9, "meggy": 0.0, "szilva": 2.5, "narancs": 14.7}
         ];
 
-        //lower = {"alma": 0.0, "körte": 0.0, "barack": 0.0, "meggy": -1.0, "szilva": 0.0, "narancs": 0.0};
-        //upper = {"alma": 4.0, "körte": 4.0, "barack": 8.0, "meggy": 3.0, "szilva": 3.0, "narancs": 15.0};
+        this.state = { phase: 0, current: null };
+        this.data = [];
+    }
 
-        this.state = { phase: 0, point: [], upper: [], lower: [] };
+    putData(data) {
+        this.data.push(data);
+        while (data.length > data.window)
+            data.shift();
+        this.setState({current: data});
     }
 
     handleStartStream() {
         console.log("start");
+        this.data = [];
         this.server = new WebSocket("ws://localhost:8880");
         this.server.onopen = () => {
             console.log("connection open");
@@ -33,11 +40,7 @@ export default class AnoDashApp extends React.Component {
             this.server.send(JSON.stringify(message));
             console.log("message sent: ", message);
           };
-        this.server.onmessage = (event) => {
-            const point = JSON.parse(event.data);
-            console.log(point);
-            this.setState({point: point.sample, upper: point.quantile90, lower: point.quantile10});
-        }
+        this.server.onmessage = (event) => this.putData(JSON.parse(event.data));
     }
 
     render() {
@@ -46,29 +49,27 @@ export default class AnoDashApp extends React.Component {
             <div className="AnoDashApp">
                 <div className="anodash-line">
                     <div className="anodash-radar-container">
-                        <RadarPlot 
-                            point={this.state.point}
-                            lowerLimit={this.state.lower}
-                            upperLimit={this.state.upper}
+                        {this.state.current && <RadarPlot 
+                            point={this.state.current?.sample}
+                            lowerLimit={this.state.current?.quantile10}
+                            upperLimit={this.state.current?.quantile90}
                             ticks={[0.00, 0.25, 0.50, 0.75, 1.00]}
-                        />
+                        />}
+                        {!this.state.current && <NonIdealState title="No data received yet"  description="Connect to the server and start streaming to watch the radar chart" icon="polygon-filter"/>}
                     </div>
                     <div className="anodash-graph-container">
+                        {!this.state.current && <NonIdealState title="No graph available yet"  description="Start streaming and wait to see the relation graph" icon="layout"/>}
                     </div>
                 </div>
                 <div className="anodash-line">
                     <div className="anodash-timeplot-container">
+                        {!this.state.current && <NonIdealState title="No data received yet"  description="Connect to the server and start streaming to watch the time series plot" icon="timeline-area-chart"/>}
                     </div>
                     <div className="anodash-relplot-container">
+                        {!this.state.current && <NonIdealState title="No relation selected"  description="Click an edge in the graph to watch the relation density plot" icon="regression-chart"/>}
                     </div>
                 </div>
             </div>
             </>;
     }
 }
-
-//point={this.values[this.state.phase]}
-//lowerLimit={{"alma": 0.0, "körte": 0.0, "barack": 0.0, "meggy": -1.0, "szilva": 0.0, "narancs": 0.0}}
-//upperLimit={{"alma": 4.0, "körte": 4.0, "barack": 8.0, "meggy": 3.0, "szilva": 3.0, "narancs": 15.0}}
-//<button type="button" onClick={() => {this.setState(state => ({phase: Math.max(0, state.phase-1)})); }} > Prev </button>
-//<button type="button" onClick={() => {this.setState(state => ({phase: Math.min(this.values.length-1, state.phase+1)})); }} > Next </button>
