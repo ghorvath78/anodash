@@ -50,7 +50,7 @@ class DataSet:
 
 
 async def dataFeeder(websocket, message):
-    for i in range(100):
+    for i in range(1000):
         print("sending message ", i)
         await websocket.send(json.dumps(dataSet.nextStep()))
         await asyncio.sleep(float(message["sampleDelay"]));

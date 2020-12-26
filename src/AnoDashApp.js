@@ -23,8 +23,8 @@ export default class AnoDashApp extends React.Component {
 
     putData(data) {
         this.data.push(data);
-        while (data.length > data.window)
-            data.shift();
+        while (this.data.length > data.window)
+            this.data.shift();
         this.setState({current: data});
     }
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import './MultiTimeSeriesPlot.css';
 import * as d3 from "d3";
+import { lineChunked } from "d3-line-chunked";
 
 export default class MultiTimeSeriesPlot extends React.Component {
 
@@ -10,7 +11,7 @@ export default class MultiTimeSeriesPlot extends React.Component {
         super(props);
 
         this.cfg = {
-            plotWidth: 750,
+            plotWidth: 1500,
             plotHeight: 64,
         };        
     }
@@ -65,15 +66,32 @@ export default class MultiTimeSeriesPlot extends React.Component {
         this.svgCanvas.attr("viewBox", "0 0 " + (this.cfg.plotWidth + yLabelWidth) + " " + (height + xLabelHeight));
 
         // render curves
-        this.plotArea.selectAll("rect")
-            .data(Object.keys(last))
+        const lineData = [];
+        for (const vr of variables) {
+            const upper = this.props.buffer[this.props.buffer.length-1].quantile90[vr];
+            const lower = this.props.buffer[this.props.buffer.length-1].quantile10[vr];
+            const thisLineData = [{x: 0, y: lower, upper: upper, lower: lower}];
+            for (let i = 0; i < this.props.buffer.length; i++)
+                thisLineData.push({x: i, y: this.props.buffer[i].sample[vr], upper: upper, lower: lower});
+            thisLineData.push({x: this.props.buffer.length-1, y: lower, upper: upper, lower: lower});
+            lineData.push(thisLineData);
+        }
+
+        const line = lineChunked()            
+            .x(d => d.x/W*this.cfg.plotWidth)
+            .y(d => d.upper > d.lower ? (d.y - d.lower) / (d.upper - d.lower) * this.cfg.plotHeight : 0)
+            .curve(d3.curveNatural);
+        const curveSelection = this.plotArea
+            .selectAll(".curve")
+            .data(lineData);
+        const curveEntering = curveSelection
             .enter()
-            .append("rect")
-            .attr("x", 0)
-            .attr("y", (d, i) => (i-1)*this.cfg.plotHeight)
-            .attr("width", this.cfg.plotWidth)
-            .attr("height", this.cfg.plotHeight)
-            .attr("class", "rect");
+            .append("g")
+            .attr("class", "curve");
+        curveSelection.merge(curveEntering)
+            .attr("transform", (d, i) => "translate(0," + (i*this.cfg.plotHeight) +") scale(1,-1)")
+            .call(line);
+        curveSelection.exit().remove();
     }
 
     render() {
