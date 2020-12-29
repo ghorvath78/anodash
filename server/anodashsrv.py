@@ -46,11 +46,12 @@ class DataSet:
         if self.sinceKeyTime >= self.W:
             self.sinceKeyTime = 0
             self.keyTimeUpdate()            
-            packet["graph"] = {"nodes": [{"id": n} for n in self.mst.nodes()], "links": [{"source": pr[0], "target": pr[1]} for pr in self.mst.edges()]}
 
-        if self.sinceKeyTime == 1:
-            self.mst = nx.maximum_spanning_tree(nx.from_pandas_adjacency(self.dataFrame.iloc[:self.W,:].corr(method="kendall").abs()))
-            packet["graph"] = {"nodes": [{"id": n} for n in self.mst.nodes()], "links": [{"source": pr[0], "target": pr[1]} for pr in self.mst.edges()]}
+        if hasattr(self, 'mst'):
+            packet["graph"] = {"nodes": [{"var": n, "score": np.random.rand()} for n in self.mst.nodes()], "links": [{"var1": pr[0], "var2": pr[1], "score": np.random.rand()} for pr in self.mst.edges()]}
+        else:
+            mst = nx.maximum_spanning_tree(nx.from_pandas_adjacency(self.dataFrame.iloc[:self.W,:].corr(method="kendall").abs()))
+            packet["graph"] = {"nodes": [{"var": n, "score": np.random.rand()} for n in mst.nodes()], "links": [{"var1": pr[0], "var2": pr[1], "score": np.random.rand()} for pr in mst.edges()]}
 
         return packet
 

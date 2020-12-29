@@ -15,8 +15,9 @@
 }
 
 .anodash-graph-container {
-  flex-grow: 1;
-  flex-shrink: 1;
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: calc(100vw - 100vh /2 + 5em / 2 + 1em - 3em);
   margin: 1em 1em 0em 0em;
   box-shadow: 0 8px 12px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19) !important;
 }
