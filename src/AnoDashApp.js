@@ -47,6 +47,10 @@ export default class AnoDashApp extends React.Component {
         this.server.onmessage = (event) => this.putData(JSON.parse(event.data));
     }
 
+    handleRelationClick(var1, var2) {
+        console.log("Clicked: ", var1, " - ", var2);
+    }
+
     render() {
         return <>
             <HeaderBar onStartStream={() => this.handleStartStream()} />
@@ -62,7 +66,7 @@ export default class AnoDashApp extends React.Component {
                         {!this.state.currentSample && <NonIdealState title="No data received yet"  description="Connect to the server and start streaming to watch the radar chart" icon="polygon-filter"/>}
                     </div>
                     <div className="anodash-graph-container">
-                        {this.state.currentGraph && <RelationGraph graph={this.state.currentGraph} />}
+                        {this.state.currentGraph && <RelationGraph graph={this.state.currentGraph} onRelationClicked={(v1, v2) => this.handleRelationClick(v1, v2)} />}
                         {!this.state.currentGraph && <NonIdealState title="No graph available yet"  description="Start streaming and wait to see the relation graph" icon="layout"/>}                        
                     </div>
                 </div>

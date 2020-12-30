@@ -45,20 +45,20 @@ class DataSet:
         self.sinceKeyTime += 1
         if self.sinceKeyTime >= self.W:
             self.sinceKeyTime = 0
-            self.keyTimeUpdate()            
+            self.mst = self.recalcRelations(self.startPos, self.endPos)            
 
-        if hasattr(self, 'mst'):
-            packet["graph"] = {"nodes": [{"var": n, "score": np.random.rand()} for n in self.mst.nodes()], "links": [{"var1": pr[0], "var2": pr[1], "score": np.random.rand()} for pr in self.mst.edges()]}
-        else:
-            mst = nx.maximum_spanning_tree(nx.from_pandas_adjacency(self.dataFrame.iloc[:self.W,:].corr(method="kendall").abs()))
-            packet["graph"] = {"nodes": [{"var": n, "score": np.random.rand()} for n in mst.nodes()], "links": [{"var1": pr[0], "var2": pr[1], "score": np.random.rand()} for pr in mst.edges()]}
+        if not hasattr(self, 'mst'):
+            self.mst = self.recalcRelations(self.startPos, self.startPos+self.W);
+
+        packet["graph"] = {"nodes": [{"var": n, "score": np.random.rand()} for n in self.mst.nodes()], "links": [{"var1": pr[0], "var2": pr[1], "score": np.random.rand()} for pr in self.mst.edges()]}
 
         return packet
 
-    def keyTimeUpdate(self):
-        kmtrx = self.dataFrame.iloc[self.startPos:self.endPos,:].corr(method="kendall").abs()
+    def recalcRelations(self, startPos, endPos):
+        kmtrx = self.dataFrame.iloc[startPos:endPos,:].corr(method="kendall").abs()
+        kmtrx[np.isnan(kmtrx)] = 0;
         G_kendall = nx.from_pandas_adjacency(kmtrx)
-        self.mst = nx.maximum_spanning_tree(G_kendall)
+        return nx.maximum_spanning_tree(G_kendall)
 
 async def dataFeeder(websocket, message):
     for i in range(1000):
@@ -78,7 +78,7 @@ async def srvmain(websocket, path):
         task = asyncio.create_task(dataFeeder(websocket, msg))
         await task
 
-dataSet = DataSet(dta, "basestation", "szupertitkos adatset", 200)
+dataSet = DataSet(dta, "basestation", "szupertitkos adatset", 100)
 
 print("starting server")
 server = websockets.serve(srvmain, "localhost", 8880)

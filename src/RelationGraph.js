@@ -12,7 +12,7 @@ export default class RelationGraph extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = { width: 0, height: 0 };
+        this.state = { width: 0, height: 0, showLabels: true };
 
         this.cfg = {
             plotWidth: 1500,
@@ -40,10 +40,19 @@ export default class RelationGraph extends React.Component {
         svgMain.selectAll("*").remove();
 
         this.simulation = d3.forceSimulation()
-            .force("link", d3.forceLink().id(d => d.id))
+            .force("link", d3.forceLink().id(d => d.var))
             .force("charge", d3.forceManyBody().strength(-30))
             .force("centerY", d3.forceY(0).strength(0.03))         
-            .force("centerX", d3.forceX(0).strength(0.01));                
+            .force("centerX", d3.forceX(0).strength(0.01))
+            .on("tick", () => {
+                this.linkParts
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);       
+                this.nodeParts
+                    .attr("transform", d => "translate(" + d.x + "," + d.y + ")");
+            });                
 
         this.links = svgMain.append("g").attr("class", "links");
         this.nodes = svgMain.append("g").attr("class", "nodes");
@@ -65,9 +74,9 @@ export default class RelationGraph extends React.Component {
         if (!this.props.graph)
             return;
 
-        this.mergeGraphs();
+        
 
-        let changed = 0;
+        let changed = this.mergeGraphs();
         changed += this.links.selectAll("line")
             .data(this.graph.links, d => d.var1 + "-" + d.var2)
             .enter().append("line").size();
@@ -75,11 +84,11 @@ export default class RelationGraph extends React.Component {
             .data(this.graph.links, d => d.var1 + "-" + d.var2)
             .exit().remove().size();
 
-        const linkParts = this.links.selectAll("line")
+        this.linkParts = this.links.selectAll("line")
             .data(this.graph.links, d => d.var1 + "-" + d.var2)
             .attr("stroke", d => this.colorScale(d.score))
             .attr("stroke-width", 3)
-            .on("click", (event,d) => console.log(event, d));
+            .on("click", (event,d) => this.props.onRelationClicked(d.var1, d.var2));
             
         const newNodes = this.nodes.selectAll("g")
             .data(this.graph.nodes, d => d.var)
@@ -109,64 +118,76 @@ export default class RelationGraph extends React.Component {
                 }));
 
         newNodes.append("text")
-            .text(d => d.var)
-            .attr('x', 6)
-            .attr('y', 3);
+                .text(d => d.var)
+                .attr('x', 6)
+                .attr('y', 3);
 
         newNodes.append("title")
             .text(d => d.var);
 
+        this.nodes.selectAll("text").attr("visibility", this.state.showLabels ? "visible" : "hidden");
+
         changed += this.nodes.selectAll("g")
             .data(this.graph.nodes, d => d.var)
-            .exit().remove()
+            .exit().remove().size();
 
-        const nodeParts = this.nodes.selectAll("g")
+        this.nodeParts = this.nodes.selectAll("g")
             .data(this.graph.nodes, d => d.var)
   
-        this.simulation.nodes(this.graph.nodes).on("tick", () => {
-            linkParts
-                .attr("x1", d => d.source.x)
-                .attr("y1", d => d.source.y)
-                .attr("x2", d => d.target.x)
-                .attr("y2", d => d.target.y);       
-            nodeParts
-                .attr("transform", d => "translate(" + d.x + "," + d.y + ")");
-        });  
+        this.simulation.nodes(this.graph.nodes);  
         this.simulation.force("link").id(d => d.var).links(this.graph.links);
 
         if (changed > 0)
-            this.restartSimulation();
+            this.continueSimulation();
+    }
+
+    continueSimulation() {
+        this.simulation.alphaDecay(0.005).alpha(1.0).restart();
     }
 
     restartSimulation() {
-        this.simulation.alphaDecay(0.002).alpha(1.0).restart();
+        this.graph.nodes.forEach(d => {
+            delete d.x;
+            delete d.y;
+        });
+        this.simulation.nodes(this.graph.nodes);
+        this.simulation.force("link").id(d => d.var).links(this.graph.links);
+        this.continueSimulation();
     }
 
     mergeGraphs() {
         this.props.graph.links.forEach(d => { d.source = d.var1; d.target = d.var2; });
-        if (!this.graph)
+        if (!this.graph) {
             this.graph = this.props.graph;
+            return 1;
+        }
         else {
+            let changed = 0;
             // update nodes and add new ones if necessary
             this.props.graph.nodes.forEach(d => {
                 const hit = this.graph.nodes.find(n => n.var === d.var);
-                if (!hit)
+                if (!hit) {
                     this.graph.nodes.push(d);
+                    changed += 1;
+                }
                 else
                     hit.score = d.score;
             });
             // delete nodes that do not exist any more
-            _.dropWhile(this.graph.nodes, d => !this.props.graph.nodes.find(n => n.var === d.var));
+            changed += _.remove(this.graph.nodes, d => !this.props.graph.nodes.find(n => n.var === d.var)).length;
             // update links and add new ones if necessary
             this.props.graph.links.forEach(d => {
                 const hit = this.graph.links.find(n => (n.var1 === d.var1 && n.var2 === d.var2) || (n.var1 === d.var2 && n.var2 === d.var1));
-                if (!hit)
+                if (!hit) {
                     this.graph.links.push(d);
+                    changed += 1;
+                }
                 else
                     hit.score = d.score;
             });
             // delete links that do not exist any more
-            _.dropWhile(this.graph.links, d => !this.props.graph.links.find(n => (n.var1 === d.var1 && n.var2 === d.var2) || (n.var1 === d.var2 && n.var2 === d.var1)));
+            changed += _.remove(this.graph.links, d => !this.props.graph.links.find(n => (n.var1 === d.var1 && n.var2 === d.var2) || (n.var1 === d.var2 && n.var2 === d.var1))).length;
+            return changed;
         }
     }
 
@@ -181,7 +202,13 @@ export default class RelationGraph extends React.Component {
                     </div>
                 </ReactResizeDetector>
                 <div className="relationgraph-buttonbar">
-                    <div><Button minimal="true" icon="refresh" onClick={() => this.restartSimulation()} /></div>
+                <div><Button minimal="true" icon="refresh" onClick={() => this.restartSimulation()} /></div>
+                <div><Button minimal="true" icon="play" onClick={() => this.continueSimulation()} /></div>
+                <div><Button minimal="true" icon="font" active={this.state.showLabels} onClick={() => {                    
+                        this.setState(state => {return { showLabels: !state.showLabels }});
+                        this.forceUpdate();
+                    }
+                } /></div>
                 </div>
             </div>;
     }
