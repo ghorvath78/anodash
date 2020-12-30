@@ -32,7 +32,6 @@ export default class RadarPlot extends React.Component {
             .style("width", "100%")
             .attr("viewBox", (-this.cfg.r)+" "+(-this.cfg.r)+" "+(2*this.cfg.r)+" "+(2*this.cfg.r))
 
-//        this.svgCanvas.append("rect").attr("x", -this.cfg.r).attr("y", -this.cfg.r).attr("width", 2*this.cfg.r).attr("height", 2*this.cfg.r).attr("fill", "none").attr("stroke","black").attr("stroke-width", 2);
         this.rawPlot = this.svgCanvas.append("g").append("path").attr("class", "rawplot");
         this.axis = this.svgCanvas.append("g").attr("class", "axis");
         this.ticks = this.svgCanvas.append("g").attr("class", "ticks");
@@ -40,7 +39,7 @@ export default class RadarPlot extends React.Component {
 
     drawRadar() {
     
-        const vars = Object.keys(this.props.point);
+        const vars = this.props.point.variables.map(d => d.name);
         const N = vars.length;
         const startRad = this.cfg.r*this.cfg.minFactor;
         const endRad = this.cfg.r*this.cfg.maxFactor;
@@ -94,8 +93,8 @@ export default class RadarPlot extends React.Component {
         const line = d3.lineRadial()
             .curve(d3.curveLinearClosed)
 	        .angle( (d,i) => i*2*Math.PI/N + Math.PI/2)
-            .radius( d => startRad + (this.props.upperLimit[d[0]] !== this.props.lowerLimit[d[0]] ? (endRad-startRad)/(this.props.upperLimit[d[0]]-this.props.lowerLimit[d[0]])*(d[1] - this.props.lowerLimit[d[0]]) : 0) );
-        this.rawPlot.transition().duration(100).attr("d", line(Object.entries(this.props.point)));
+            .radius( d => startRad + (d.percentile95 !== d.percentile05 ? (endRad-startRad)/(d.percentile95-d.percentile05)*(d.value - d.percentile05) : 0) );
+        this.rawPlot.transition().duration(100).attr("d", line(this.props.point.variables));
     }
 
     render() {

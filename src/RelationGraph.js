@@ -72,9 +72,7 @@ export default class RelationGraph extends React.Component {
     drawGraph() {
 
         if (!this.props.graph)
-            return;
-
-        
+            return;       
 
         let changed = this.mergeGraphs();
         changed += this.links.selectAll("line")
@@ -156,27 +154,42 @@ export default class RelationGraph extends React.Component {
     }
 
     mergeGraphs() {
-        this.props.graph.links.forEach(d => { d.source = d.var1; d.target = d.var2; });
+        this.props.graph.relations.forEach(d => { d.source = d.var1; d.target = d.var2; });
+        const currentNodes = _.union(this.props.graph.relations.map(d => d.var1), this.props.graph.relations.map(d => d.var2));
         if (!this.graph) {
-            this.graph = this.props.graph;
+            this.graph = {};
+            this.graph.links = this.props.graph.relations;
+            this.graph.nodes = [];
+            currentNodes.forEach(d => {
+                const vr = this.props.graph.variables.find(v => v.name === d);
+                if (vr)
+                    this.graph.nodes.push({ var: d, value: vr.value, score: vr.score });                
+            });
             return 1;
         }
         else {
             let changed = 0;
             // update nodes and add new ones if necessary
-            this.props.graph.nodes.forEach(d => {
-                const hit = this.graph.nodes.find(n => n.var === d.var);
-                if (!hit) {
-                    this.graph.nodes.push(d);
+            currentNodes.forEach(d => {
+                const hit = this.graph.nodes.find(n => n.var === d);
+                const vr = this.props.graph.variables.find(v => v.name === d);
+                if (!hit && vr) {
+                    this.graph.nodes.push({ var: d, value: vr.value, score: vr.score });
                     changed += 1;
                 }
-                else
-                    hit.score = d.score;
+                else if (!hit && !vr) {
+                    this.graph.nodes.push({ var: d, value: null, score: null });
+                    changed += 1;
+                }
+                else if (vr)
+                    hit.score = vr.score;
+                else 
+                    hit.score = null;
             });
             // delete nodes that do not exist any more
-            changed += _.remove(this.graph.nodes, d => !this.props.graph.nodes.find(n => n.var === d.var)).length;
+            changed += _.remove(this.graph.nodes, d => !currentNodes.find(n => n === d.var)).length;
             // update links and add new ones if necessary
-            this.props.graph.links.forEach(d => {
+            this.props.graph.relations.forEach(d => {
                 const hit = this.graph.links.find(n => (n.var1 === d.var1 && n.var2 === d.var2) || (n.var1 === d.var2 && n.var2 === d.var1));
                 if (!hit) {
                     this.graph.links.push(d);
@@ -186,7 +199,7 @@ export default class RelationGraph extends React.Component {
                     hit.score = d.score;
             });
             // delete links that do not exist any more
-            changed += _.remove(this.graph.links, d => !this.props.graph.links.find(n => (n.var1 === d.var1 && n.var2 === d.var2) || (n.var1 === d.var2 && n.var2 === d.var1))).length;
+            changed += _.remove(this.graph.links, d => !this.props.graph.relations.find(n => (n.var1 === d.var1 && n.var2 === d.var2) || (n.var1 === d.var2 && n.var2 === d.var1))).length;
             return changed;
         }
     }

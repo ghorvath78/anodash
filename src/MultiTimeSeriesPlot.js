@@ -37,11 +37,11 @@ export default class MultiTimeSeriesPlot extends React.Component {
 
     drawGraph() {
 
-        const last = this.props.buffer[this.props.buffer.length-1].sample;
-        const variables = Object.keys(last);
+        const last = this.props.buffer[this.props.buffer.length-1];
+        const variables = last.variables.map(d => d.name);
         const N = variables.length;
         const height = N * this.cfg.plotHeight;
-        const W = this.props.buffer[this.props.buffer.length-1].window;
+        const W = last.window;
 
         // y axis
         const yName = d3.scaleBand()
@@ -67,20 +67,32 @@ export default class MultiTimeSeriesPlot extends React.Component {
 
         // render curves
         const lineData = [];
-        for (const vr of variables) {
-            const upper = this.props.buffer[this.props.buffer.length-1].quantile90[vr];
-            const lower = this.props.buffer[this.props.buffer.length-1].quantile10[vr];
+        for (const vr of last.variables) {
+            let upper = vr.percentile95;
+            if ((vr.maximum - vr.lower) > 2 * (vr.upper - vr.lower))
+                upper = (vr.maximum - vr.lower) / 2;
+            let lower = vr.percentile05;
+            if ((vr.lower - vr.minimum) > 2 * (vr.upper - vr.lower))
+                lower = (vr.minimum + 2*vr.upper) / 3;
             const thisLineData = [{x: 0, y: lower, upper: upper, lower: lower}];
-            for (let i = 0; i < this.props.buffer.length; i++)
-                thisLineData.push({x: i, y: this.props.buffer[i].sample[vr], upper: upper, lower: lower});
+            for (let i = 0; i < this.props.buffer.length; i++) {
+                const hst = this.props.buffer[i].variables.find(d => d.name === vr.name);                
+                if (hst)
+                    thisLineData.push({x: i, y: hst.value, upper: upper, lower: lower});
+            }
             thisLineData.push({x: this.props.buffer.length-1, y: lower, upper: upper, lower: lower});
             lineData.push(thisLineData);
         }
 
         const line = lineChunked()            
             .x(d => d.x/W*this.cfg.plotWidth)
-            .y(d => d.upper > d.lower ? (d.y - d.lower) / (d.upper - d.lower) * this.cfg.plotHeight : 0)
-            .curve(d3.curveNatural);
+            .y(d => {
+                const val = d.upper >= d.lower ? (d.y - d.lower) / (d.upper - d.lower) * this.cfg.plotHeight : d.lower;
+                if (val > this.cfg.plotHeight*2)
+                    console.log(d);
+                return val;
+            })
+            .curve(d3.curveLinear);
         const curveSelection = this.plotArea
             .selectAll(".curve")
             .data(lineData);

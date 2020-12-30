@@ -29,17 +29,25 @@ class DataSet:
             self.startPos = self.endPos - self.W
         
         # assemble data packet
+
         packet = {}
         packet["command"] = "putSample"
-        packet["sample"] =  self.dataFrame.iloc[self.endPos-1,:].to_dict()
-        packet["maximum"] =  self.dataFrame.iloc[self.startPos:self.endPos,:].max().to_dict()
-        packet["minimum"] =  self.dataFrame.iloc[self.startPos:self.endPos,:].min().to_dict()
-        packet["quantile10"] =  self.dataFrame.iloc[self.startPos:self.endPos,:].quantile(0.10).to_dict()
-        packet["quantile25"] =  self.dataFrame.iloc[self.startPos:self.endPos,:].quantile(0.25).to_dict()
-        packet["quantile50"] =  self.dataFrame.iloc[self.startPos:self.endPos,:].quantile(0.50).to_dict()
-        packet["quantile75"] =  self.dataFrame.iloc[self.startPos:self.endPos,:].quantile(0.75).to_dict()
-        packet["quantile90"] =  self.dataFrame.iloc[self.startPos:self.endPos,:].quantile(0.90).to_dict()
         packet["window"] =  self.W
+
+        vardf = pd.DataFrame(data={ \
+            "name": self.dataFrame.columns, \
+            "value": self.dataFrame.iloc[self.endPos-1,:], \
+            "score": np.random.rand(len(self.dataFrame.columns)), \
+            "maximum": self.dataFrame.iloc[self.startPos:self.endPos,:].max(), \
+            "minimum": self.dataFrame.iloc[self.startPos:self.endPos,:].min(), \
+            "percentile05": self.dataFrame.iloc[self.startPos:self.endPos,:].quantile(0.05), \
+            "percentile25": self.dataFrame.iloc[self.startPos:self.endPos,:].quantile(0.25), \
+            "percentile50": self.dataFrame.iloc[self.startPos:self.endPos,:].quantile(0.50), \
+            "percentile75": self.dataFrame.iloc[self.startPos:self.endPos,:].quantile(0.75), \
+            "percentile95": self.dataFrame.iloc[self.startPos:self.endPos,:].quantile(0.95) \
+            })
+        packet["variables"] = list(vardf.transpose().to_dict().values())
+
 
         # update key time measurement
         self.sinceKeyTime += 1
@@ -50,7 +58,7 @@ class DataSet:
         if not hasattr(self, 'mst'):
             self.mst = self.recalcRelations(self.startPos, self.startPos+self.W);
 
-        packet["graph"] = {"nodes": [{"var": n, "score": np.random.rand()} for n in self.mst.nodes()], "links": [{"var1": pr[0], "var2": pr[1], "score": np.random.rand()} for pr in self.mst.edges()]}
+        packet["relations"] = [{"var1": pr[0], "var2": pr[1], "score": np.random.rand()} for pr in self.mst.edges()]
 
         return packet
 

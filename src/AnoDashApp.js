@@ -18,7 +18,7 @@ export default class AnoDashApp extends React.Component {
             {"alma": 2.0, "körte": 1.2, "barack": 5.9, "meggy": 0.0, "szilva": 2.5, "narancs": 14.7}
         ];
 
-        this.state = { phase: 0, currentSample: null, currentGraph: null };
+        this.state = { phase: 0, currentMessage: null };
         this.data = [];
     }
 
@@ -26,9 +26,8 @@ export default class AnoDashApp extends React.Component {
         this.data.push(data);
         while (this.data.length > data.window)
             this.data.shift();
-        this.setState({currentSample: data});
-        if (data.graph)
-            this.setState({currentGraph: data.graph});
+//        console.log(data);
+        this.setState({currentMessage: data});
     }
 
     handleStartStream() {
@@ -57,29 +56,24 @@ export default class AnoDashApp extends React.Component {
             <div className="AnoDashApp">
                 <div className="anodash-line">
                     <div className="anodash-radar-container">
-                        {this.state.currentSample && <RadarPlot 
-                            point={this.state.currentSample?.sample}
-                            lowerLimit={this.state.currentSample?.quantile10}
-                            upperLimit={this.state.currentSample?.quantile90}
+                        {this.state.currentMessage && <RadarPlot 
+                            point={this.state.currentMessage}
                             ticks={[0.00, 0.25, 0.50, 0.75, 1.00]}
                         />}
-                        {!this.state.currentSample && <NonIdealState title="No data received yet"  description="Connect to the server and start streaming to watch the radar chart" icon="polygon-filter"/>}
+                        {!this.state.currentMessage && <NonIdealState title="No data received yet"  description="Connect to the server and start streaming to watch the radar chart" icon="polygon-filter"/>}
                     </div>
                     <div className="anodash-graph-container">
-                        {this.state.currentGraph && <RelationGraph graph={this.state.currentGraph} onRelationClicked={(v1, v2) => this.handleRelationClick(v1, v2)} />}
-                        {!this.state.currentGraph && <NonIdealState title="No graph available yet"  description="Start streaming and wait to see the relation graph" icon="layout"/>}                        
+                        {this.state.currentMessage?.relations && <RelationGraph graph={this.state.currentMessage} onRelationClicked={(v1, v2) => this.handleRelationClick(v1, v2)} />}
+                        {!(this.state.currentMessage?.relations) && <NonIdealState title="No graph available yet"  description="Start streaming and wait till the relation graph arrives" icon="layout"/>}                        
                     </div>
                 </div>
                 <div className="anodash-line">
                     <div className="anodash-timeplot-container">
-                        {this.state.currentSample && <MultiTimeSeriesPlot 
-                            lastMsg={this.state.currentSample}
-                            buffer={this.data}
-                        />}
-                        {!this.state.currentSample && <NonIdealState title="No data received yet"  description="Connect to the server and start streaming to watch the time series plot" icon="timeline-area-chart"/>}
+                        {this.state.currentMessage && <MultiTimeSeriesPlot buffer={this.data} />}
+                        {!this.state.currentMessage && <NonIdealState title="No data received yet"  description="Connect to the server and start streaming to watch the time series plot" icon="timeline-area-chart"/>}
                     </div>
                     <div className="anodash-relplot-container">
-                        {!this.state.currentSample && <NonIdealState title="No relation selected"  description="Click an edge in the graph to watch the relation density plot" icon="regression-chart"/>}
+                        {!this.state.currentMessage && <NonIdealState title="No relation selected"  description="Click an edge in the graph to watch the relation density plot" icon="regression-chart"/>}
                     </div>
                 </div>
             </div>
