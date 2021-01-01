@@ -30,6 +30,21 @@ export default class MultiTimeSeriesPlot extends React.Component {
         this.svgCanvas = d3.select(this.canvas.current)
             .append("svg")
             .style("width", "100%");
+
+        this.svgCanvas.append("linearGradient")
+            .attr("id", "sensor-gradient")
+            .attr("gradientUnits", "userSpaceOnUse")
+            .attr("x1", 0).attr("y1", this.cfg.plotHeight*0)
+            .attr("x2", 0).attr("y2", this.cfg.plotHeight*1)
+          .selectAll("stop")
+            .data([
+              {offset: "0%", color: "blue"},
+              {offset: "100%", color: "orange"}
+            ])
+          .enter().append("stop")
+            .attr("offset", d => d.offset)
+            .attr("stop-color", d => d.color);
+
         this.plotArea = this.svgCanvas.append("g");
         this.yAxis = this.plotArea.append("g");            
         this.xAxis = this.plotArea.append("g");            
@@ -68,31 +83,22 @@ export default class MultiTimeSeriesPlot extends React.Component {
         // render curves
         const lineData = [];
         for (const vr of last.variables) {
-            let upper = vr.percentile95;
-            if ((vr.maximum - vr.lower) > 2 * (vr.upper - vr.lower))
-                upper = (vr.maximum - vr.lower) / 2;
-            let lower = vr.percentile05;
-            if ((vr.lower - vr.minimum) > 2 * (vr.upper - vr.lower))
-                lower = (vr.minimum + 2*vr.upper) / 3;
-            const thisLineData = [{x: 0, y: lower, upper: upper, lower: lower}];
+            const upper = vr.percentile95;
+            const lower = vr.percentile05;
+            const scale = Math.max(upper-lower, (vr.maximum-lower)/2, -(vr.minimum-lower)/2);
+            const thisLineData = [{x: 0, y: lower, lower: lower, scale: scale}];
             for (let i = 0; i < this.props.buffer.length; i++) {
                 const hst = this.props.buffer[i].variables.find(d => d.name === vr.name);                
-                if (hst)
-                    thisLineData.push({x: i, y: hst.value, upper: upper, lower: lower});
+                thisLineData.push({x: i, y: hst?.value, lower: lower, scale: scale});
             }
-            thisLineData.push({x: this.props.buffer.length-1, y: lower, upper: upper, lower: lower});
+            thisLineData.push({x: this.props.buffer.length-1, y: lower, lower: lower, scale: scale});
             lineData.push(thisLineData);
         }
 
         const line = lineChunked()            
             .x(d => d.x/W*this.cfg.plotWidth)
-            .y(d => {
-                const val = d.upper >= d.lower ? (d.y - d.lower) / (d.upper - d.lower) * this.cfg.plotHeight : d.lower;
-                if (val > this.cfg.plotHeight*2)
-                    console.log(d);
-                return val;
-            })
-            .curve(d3.curveLinear);
+            .y(d => d.scale > 0 ? (d.y - d.lower) / d.scale * this.cfg.plotHeight : 0)
+            .curve(d3.curveCatmullRom.alpha(0.5));
         const curveSelection = this.plotArea
             .selectAll(".curve")
             .data(lineData);

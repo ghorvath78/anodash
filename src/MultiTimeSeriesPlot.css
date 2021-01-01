@@ -22,7 +22,7 @@
 
 .multitsplot-container .d3-line-chunked-defined {
     stroke: blue;
-    stroke-width: 1.5px;
-    fill: blue;    
+    stroke-width: 1px;
+    fill: url(#sensor-gradient);    
     fill-opacity: 0.25;
 }
