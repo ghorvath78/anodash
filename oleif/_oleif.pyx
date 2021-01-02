@@ -25,7 +25,7 @@ cdef class iForest:
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def __cinit__ (self, np.ndarray[double, ndim=2] X not None, int ntrees, int sample_size, int limit=0, int ExtensionLevel=0, int seed=-1):
+    def __cinit__ (self, int ntrees, int sample_size, int limit=0, int ExtensionLevel=0, int seed=-1):
         if ExtensionLevel < 0:
             raise Exception("Wrong Extension")
         self.thisptr = new __oleif.iForest (ntrees, sample_size, limit, ExtensionLevel, seed)

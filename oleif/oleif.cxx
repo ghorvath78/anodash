@@ -280,7 +280,6 @@ double Path::find_path (Node* node_in)
  ****************************/
 iForest::iForest (int ntrees_in, int sample_in, int limit_in=0, int exlevel_in=0, int random_seed_in=-1)
 {
-
 	ntrees = ntrees_in;
 	sample = sample_in;
 	limit = limit_in;
@@ -296,8 +295,6 @@ iForest::iForest (int ntrees_in, int sample_in, int limit_in=0, int exlevel_in=0
 	}
 	random_engine = RANDOM_ENGINE(random_seed);
 	nextTree = 0;
-	CheckSampleSize ();
-	CheckExtensionLevel ();
 }
 
 iForest::~iForest ()
@@ -346,6 +343,11 @@ bool iForest::CheckSampleSize ()
 }
 
 void iForest::addNextTree (double* X_in, int nobjs_in, int dim_in) {
+
+	nobjs = nobjs_in;
+	dim = dim_in;
+	CheckSampleSize ();
+	CheckExtensionLevel ();
 
 	if (Trees[nextTree].root != NULL) 
 		delete_tree_node (Trees[nextTree].root);

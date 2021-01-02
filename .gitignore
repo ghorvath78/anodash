@@ -24,3 +24,10 @@ yarn-error.log*
 
 .eslintcache
 yarn.lock
+
+/oleif/*.cpp
+/oleif/build
+/oleif/oleif.egg-info
+/oleif/__pycache__
+/oleif/*.so
+
