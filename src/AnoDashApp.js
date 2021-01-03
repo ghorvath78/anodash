@@ -26,7 +26,8 @@ export default class AnoDashApp extends React.Component {
         this.data.push(data);
         while (this.data.length > data.window)
             this.data.shift();
-//        console.log(data);
+//        if (data.observed)
+//            console.log(data);
         this.setState({currentMessage: data});
     }
 
@@ -47,7 +48,14 @@ export default class AnoDashApp extends React.Component {
     }
 
     handleRelationClick(var1, var2) {
+
         console.log("Clicked: ", var1, " - ", var2);
+        const message = {
+            command: "observe",
+            var1: var1,
+            var2: var2
+        };
+        this.server.send(JSON.stringify(message));
     }
 
     render() {

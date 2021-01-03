@@ -21,6 +21,8 @@ class DataFeeder:
         self.buffer = None
         self.oleif = {}
         self.observed = ("", "")
+        self.observedLevels = {}
+        self.sendObserved = False
         
     def initialize(self, start):
         self.startPos = start
@@ -30,6 +32,8 @@ class DataFeeder:
         self.windowUpdate(self.startPos, self.startPos+self.W);
 
     def nextStep(self):
+
+        packet = {}
 
         self.endPos += 1
         if self.endPos - self.startPos > self.W:
@@ -44,9 +48,11 @@ class DataFeeder:
 
         if self.windowCounter > 0 and self.windowOffset > 0 and self.windowOffset % self.F == 0:
             self.treeUpdate(self.startPos, self.endPos)
+        if self.sendObserved:
+            packet["observed"] = self.observedLevels
+            self.sendObserved = False
 
         # assemble data packet
-        packet = {}
         packet["command"] = "putSample"
         packet["window"] =  self.W
         vardf = pd.DataFrame(data={ \
@@ -76,27 +82,60 @@ class DataFeeder:
         for v1, v2 in list(self.oleif.keys()):
             if (v1, v2) not in self.mst.edges() and (v2, v1) not in self.mst.edges() and (v1, v2) != self.observed and (v2, v1) != self.observed:
                 del self.oleif[v1, v2]
+        self.treeUpdate(startPos, endPos)
         # add new iforests for newly appearing relations
         for v1, v2 in self.mst.edges():
             if (v1, v2) not in self.oleif.keys() and (v2, v1) not in self.oleif.keys():
-                frst = oleif.iForest(self.trees, self.samples, self.samples, 0)
-                X = self.dataFrame.iloc[startPos:endPos,:].loc[:,[v1,v2]].dropna()
-                for i in range(self.trees):
-                    if X.shape[0] >= self.samples:
-                        frst.addNextTree(X.sample(self.samples, replace=False).to_numpy())
-                    else:
-                        frst.addNextTree(X.sample(self.samples, replace=True).to_numpy())
-                self.oleif[(v1, v2)] = frst
-            if (v1, v2) not in self.oleif.keys() and (v2, v1) in self.oleif.keys():
+                self.createForest(v1, v2, startPos, endPos)
+            elif (v1, v2) not in self.oleif.keys() and (v2, v1) in self.oleif.keys():
                 self.oleif[(v1, v2)] = self.oleif.pop((v2, v1))
 
-    def treeUpdate(self, startPos, endPos):
-        for pr, frst in oleif.items():
-            X = self.dataFrame.loc[endPos-self.R:endPos,:].loc[:,pr].dropna()
+    def createForest(self, var1, var2, startPos, endPos):
+        frst = oleif.iForest(self.trees, self.samples, self.samples, 0)
+        X = self.dataFrame.iloc[startPos:endPos,:].loc[:,[var1,var2]].dropna()
+        for i in range(self.trees):
             if X.shape[0] >= self.samples:
                 frst.addNextTree(X.sample(self.samples, replace=False).to_numpy())
             else:
                 frst.addNextTree(X.sample(self.samples, replace=True).to_numpy())
+        self.oleif[(var1, var2)] = frst
+
+    def treeUpdate(self, startPos, endPos):
+        for pr, frst in self.oleif.items():
+            X = self.dataFrame.loc[endPos-self.R:endPos,:].loc[:,list(pr)].dropna()
+            if X.shape[0] >= self.samples:
+                frst.addNextTree(X.sample(self.samples, replace=False).to_numpy())
+            else:
+                frst.addNextTree(X.sample(self.samples, replace=True).to_numpy())
+        self.generateHeatMap(startPos, endPos)
+
+    def setObservedRelation(self, var1, var2):
+        # check if there is a forest for it already
+        if self.observed == (var1, var2) or self.observed == (var2, var1):
+            self.generateHeatMap(self.startPos, self.endPos)
+            return
+        for v1, v2 in list(self.oleif.keys()):
+            if (v1 == var1 and v2 == var2) or (v1 == var2 and v2 == var1):
+                break
+        else:
+            self.createForest(var1, var2, self.startPos, self.endPos)
+        self.observed = (var1, var2)
+        self.generateHeatMap(self.startPos, self.endPos)
+
+    def generateHeatMap(self, startPos, endPos):
+        for pr, frst in self.oleif.items():
+            if self.observed == (pr[0], pr[1]) or self.observed == (pr[1], pr[0]):
+                X = self.dataFrame.loc[startPos:endPos,:].loc[:,list(pr)]
+                xAxis = np.linspace(X[pr[0]].min(), X[pr[0]].max(), 30)
+                yAxis = np.linspace(X[pr[1]].min(), X[pr[1]].max(), 30)
+                xx, yy = np.meshgrid(xAxis, yAxis)
+                S0 = frst.compute_paths(X_in=np.c_[xx.ravel(), yy.ravel()])
+                S0 = S0.reshape(xx.shape)
+                self.observedLevels = {"xAxis": xAxis.tolist(), "yAxis": yAxis.tolist(), "values": S0.tolist(), "countours": np.linspace(np.min(S0),np.max(S0),10).tolist()}
+                self.sendObserved = True
+                break
+        else:
+            self.observedLevels = None
 
 
 async def triggerDataFeeder(websocket, message):
@@ -107,23 +146,22 @@ async def triggerDataFeeder(websocket, message):
 
 async def srvmain(websocket, path):
     global task
-    msg = json.loads(await websocket.recv())
-    print("server message: ", msg)
-    if msg["command"] == "playDataSet":
-        if task:
-            task.cancel()
-        dataFeeder.initialize(0)
-        task = asyncio.create_task(triggerDataFeeder(websocket, msg))
-        await task
-    if msg["command"] == "observe" and task:
-        task.setObservedRelation(msg["var1"], msg["var2"])
+    while True:
+        print("waiting for message...")
+        msg = json.loads(await websocket.recv())
+        print("server message: ", msg)
+        if msg["command"] == "playDataSet":
+            if task:
+                task.cancel()
+            dataFeeder.initialize(0)
+            task = asyncio.get_event_loop().create_task(triggerDataFeeder(websocket, msg))
+        if msg["command"] == "observe" and task:
+            dataFeeder.setObservedRelation(msg["var1"], msg["var2"])
         
 task = None
 dta = pd.read_csv("./dataset/realdta1e4.csv")
 dataFeeder = DataFeeder(dta, "basestation", "szupertitkos adatset", trees=64, samplesPerTree=256, window=2048)
 
-print("starting server")
 server = websockets.serve(srvmain, "localhost", 8880)
 asyncio.get_event_loop().run_until_complete(server)
 asyncio.get_event_loop().run_forever()
-print("exiting server")
