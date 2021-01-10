@@ -64,9 +64,9 @@ export default class RelationPlot extends React.Component {
                     marker: {symbol: "x", size: 16, color: "white", line: {color: "black", width: 1.5}},
                 });
                 layout["title"] = `${var1.name} - ${var2.name}`;                
+                layout["xaxis"] = { range: [Math.min.apply(null, this.state.lastObservedData.observed.xAxis), Math.max.apply(null, this.state.lastObservedData.observed.xAxis)], title: var1.name };
+                layout["yaxis"] = { range: [Math.min.apply(null, this.state.lastObservedData.observed.yAxis), Math.max.apply(null, this.state.lastObservedData.observed.yAxis)], title: var2.name };
             }
-            layout["xaxis"] = { range: [Math.min.apply(null, this.state.lastObservedData.observed.xAxis), Math.max.apply(null, this.state.lastObservedData.observed.xAxis)] };
-            layout["yaxis"] = { range: [Math.min.apply(null, this.state.lastObservedData.observed.yAxis), Math.max.apply(null, this.state.lastObservedData.observed.yAxis)] };
         }
         
         return <div className="relationplot-main" ref={this.container}>

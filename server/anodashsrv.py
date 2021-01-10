@@ -157,11 +157,18 @@ async def srvmain(websocket, path):
             task = asyncio.get_event_loop().create_task(triggerDataFeeder(websocket, msg))
         if msg["command"] == "observe" and task:
             dataFeeder.setObservedRelation(msg["var1"], msg["var2"])
-        
-task = None
-dta = pd.read_csv("./dataset/realdta1e4.csv")
-dataFeeder = DataFeeder(dta, "basestation", "szupertitkos adatset", trees=64, samplesPerTree=256, window=512)
 
+#dta = pd.read_csv("./dataset/realdta1e4.csv")
+#dataFeeder = DataFeeder(dta, "basestation", "szupertitkos adatset", trees=64, samplesPerTree=256, window=512)
+
+#dta = dta = pd.read_csv("dataset/household_power_consumption.csv", delimiter=";", low_memory=False, na_values="?").iloc[:,2:].astype(np.float64)
+#dataFeeder = DataFeeder(dta, "household", "household power consumption", trees=64, samplesPerTree=256, window=512)
+
+dta = dta = pd.read_csv("dataset/03_M01_DC_part1.csv").iloc[:,7:].astype(np.float64)
+dataFeeder = DataFeeder(dta, "phm", "PHM Data Challenge", trees=64, samplesPerTree=256, window=512)
+
+
+task = None
 server = websockets.serve(srvmain, "localhost", 8880)
 asyncio.get_event_loop().run_until_complete(server)
 asyncio.get_event_loop().run_forever()

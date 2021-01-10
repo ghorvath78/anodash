@@ -62,7 +62,7 @@ export default class RelationGraph extends React.Component {
             this.zoom_handler(svgCanvas);
         }
 
-        this.colorScale = d3.scaleSequential(d3.interpolateRdYlGn).domain([0.0, 1.0]);
+        this.colorScale = d3.scaleSequential(d3.interpolateRdYlGn).domain([1.0, 0.0]);
     }
 
     shouldComponentUpdate(nextProps, nextState) {
