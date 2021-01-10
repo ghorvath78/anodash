@@ -5,6 +5,7 @@ import HeaderBar from './HeaderBar';
 import { NonIdealState } from '@blueprintjs/core';
 import MultiTimeSeriesPlot from './MultiTimeSeriesPlot';
 import RelationGraph from './RelationGraph';
+import RelationPlot from './RelationPlot';
 
 export default class AnoDashApp extends React.Component {
 
@@ -81,6 +82,7 @@ export default class AnoDashApp extends React.Component {
                         {!this.state.currentMessage && <NonIdealState title="No data received yet"  description="Connect to the server and start streaming to watch the time series plot" icon="timeline-area-chart"/>}
                     </div>
                     <div className="anodash-relplot-container">
+                        {this.state.currentMessage && <RelationPlot buffer={this.data} />}
                         {!this.state.currentMessage && <NonIdealState title="No relation selected"  description="Click an edge in the graph to watch the relation density plot" icon="regression-chart"/>}
                     </div>
                 </div>

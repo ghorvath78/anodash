@@ -131,7 +131,7 @@ class DataFeeder:
                 xx, yy = np.meshgrid(xAxis, yAxis)
                 S0 = frst.compute_paths(X_in=np.c_[xx.ravel(), yy.ravel()])
                 S0 = S0.reshape(xx.shape)
-                self.observedLevels = {"xAxis": xAxis.tolist(), "yAxis": yAxis.tolist(), "values": S0.tolist(), "countours": np.linspace(np.min(S0),np.max(S0),10).tolist()}
+                self.observedLevels = {"var1": pr[0], "var2": pr[1], "xAxis": xAxis.tolist(), "yAxis": yAxis.tolist(), "values": S0.tolist(), "countours": np.linspace(np.min(S0),np.max(S0),10).tolist()}
                 self.sendObserved = True
                 break
         else:
@@ -139,7 +139,7 @@ class DataFeeder:
 
 
 async def triggerDataFeeder(websocket, message):
-    for i in range(1000):
+    for i in range(10000):
         print("sending message ", i)
         await websocket.send(json.dumps(dataFeeder.nextStep()))
         await asyncio.sleep(float(message["sampleDelay"]));
@@ -160,7 +160,7 @@ async def srvmain(websocket, path):
         
 task = None
 dta = pd.read_csv("./dataset/realdta1e4.csv")
-dataFeeder = DataFeeder(dta, "basestation", "szupertitkos adatset", trees=64, samplesPerTree=256, window=2048)
+dataFeeder = DataFeeder(dta, "basestation", "szupertitkos adatset", trees=64, samplesPerTree=256, window=512)
 
 server = websockets.serve(srvmain, "localhost", 8880)
 asyncio.get_event_loop().run_until_complete(server)

@@ -6,7 +6,7 @@ export default class HeaderBar extends React.Component {
 
     render() {
         return <div className="headerbar-panel">
-            <Button onClick={this.props.onStartStream}>Start data stream</Button>
+            <Button onClick={this.props.onStartStream}>Start receiving data</Button>
         </div>;
     }
 }
